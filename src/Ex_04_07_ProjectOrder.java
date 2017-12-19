@@ -72,6 +72,56 @@ public class Ex_04_07_ProjectOrder {
             return order;
         }
 
+        static class DfsSort<T> {
+            enum State { FRESH, VISITING, VISITED }
+            final Map<T, State> states = new HashMap<>();
+            final Graph<T> graph;
+            final LinkedList<T> order = new LinkedList<>();
+
+            public DfsSort(Graph<T> graph) {
+                this.graph = graph;
+
+                for (T id : graph.mVertices.keySet()) {
+                    states.put(id, State.FRESH);
+                }
+
+                for (T id : graph.mVertices.keySet()) {
+                    if (states.get(id) == State.FRESH) {
+                        if (!doDfs(id)) {
+                            order.clear();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            public List<T> getOrder() {
+                return order;
+            }
+
+            private boolean doDfs(T uId) {
+                Vertex<T> u = graph.getVertex(uId);
+                states.put(uId, State.VISITING);
+                for (T vId : u.adjs) {
+                    State state = states.get(vId);
+                    if (state == State.VISITING) {
+                        return false;
+                    }
+                    if (state == State.FRESH) {
+                        doDfs(vId);
+                    }
+                }
+                states.put(uId, State.VISITED);
+                order.addFirst(uId);
+                return true;
+            }
+        }
+
+        public List<T> topologicalOrder2() {
+            DfsSort dfsSort = new DfsSort(this);
+            return dfsSort.getOrder();
+        }
+
         public List<T> topologicalOrder() {
             Sort sort = new Sort();
             while (!sort.isFinished()) {
@@ -198,7 +248,7 @@ public class Ex_04_07_ProjectOrder {
         g.addVertices(projects);
         g.addEdges(dependencies);
 
-        List<T> order = g.topologicalOrder();
+        List<T> order = g.topologicalOrder2();
         StringBuilder sb = new StringBuilder();
         for (T each : order) {
             sb.append(each);
@@ -227,6 +277,7 @@ public class Ex_04_07_ProjectOrder {
         String[][] dependencies = {{"a", "d"}, {"f", "b"}, {"b", "d"}, {"f", "a"}, {"d", "c"}};
         //String[][] dependencies = {{"a", "d"}, {"f", "b"}, {"b", "d"}, {"f", "a"}, {"d", "c"}, {"c", "b"}};
 
-        printAllProjectOrders(projects, dependencies);
+        printProjectOrder(projects, dependencies);
+        //printAllProjectOrders(projects, dependencies);
     }
 }
