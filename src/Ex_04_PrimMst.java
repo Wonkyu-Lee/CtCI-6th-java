@@ -100,6 +100,10 @@ public class Ex_04_PrimMst {
             return nodes.keySet();
         }
 
+        public int getVertexCount() {
+            return nodes.size();
+        }
+
         @Override
         public String toString() {
             Set<Edge<V>> edges = new HashSet<>();
@@ -242,11 +246,79 @@ public class Ex_04_PrimMst {
     }
 
     static <V extends Comparable<V>> Map<V, Path<V>> bellmanFord(Map<Edge<V>, Integer> edgeLengths, V start) {
-        return null;
+        Map<V, Path<V>> result = new HashMap<>();
+
+        Graph<V> g = new Graph(true);
+        for (Edge<V> edge : edgeLengths.keySet()) {
+            g.addEdge(edge.first, edge.second);
+        }
+
+        if (!g.hasVertex(start))
+            return null;
+
+        Map<V, Integer> d0 = new HashMap<>();
+        for (V v : g.getVertices()) {
+            d0.put(v, Integer.MAX_VALUE);
+        }
+        d0.put(start, 0);
+
+        Map<V, Integer> d = new HashMap<>();
+        for (V v : g.getVertices()) {
+            d.put(v, d0.get(v));
+        }
+
+        Map<V, V> prev = new HashMap<>();
+
+        Set<V> vertices = g.getVertices();
+        for (int i = 0; i < vertices.size() - 1; ++i) {
+            for (V u : vertices) {
+                for (V v : g.getAdjacencies(u)) {
+                    if (d0.get(u) == Integer.MAX_VALUE)
+                        continue;
+
+                    int dVFromU = d0.get(u) + edgeLengths.get(new Edge<>(u, v, true));
+                    if (dVFromU < d0.get(v)) {
+                        d.put(v, dVFromU);
+                        prev.put(v, u);
+                    }
+                }
+            }
+
+            for (V v : g.getVertices()) {
+                d0.put(v, d.get(v));
+            }
+        }
+
+        // if minus cycle found, return null
+        for (V u : vertices) {
+            for (V v : g.getAdjacencies(u)) {
+                int dVFromU = d0.get(u) + edgeLengths.get(new Edge<>(u, v, true));
+                if (dVFromU < d0.get(v)) {
+                    return null;
+                }
+            }
+        }
+
+        for (V v : g.getVertices()) {
+            V current = v;
+            LinkedList<V> path = new LinkedList<>();
+            path.addFirst(current);
+
+            while (prev.containsKey(current)) {
+                current = prev.get(current);
+                path.addFirst(current);
+            }
+
+            if (d.containsKey(v))
+                result.put(v, new Path<>(d.get(v), path));
+        }
+
+        return result;
     }
 
     static void testPrim() {
         System.out.println("Prim MST:");
+
         Map<Edge<Integer>, Integer> edges = new HashMap<>();
         edges.put(new Edge<>(0, 1, false), 8);
         edges.put(new Edge<>(0, 3, false), 10);
@@ -285,8 +357,32 @@ public class Ex_04_PrimMst {
         }
     }
 
+    static void testBellmanFord() {
+        System.out.println("Bellman-Ford Shortest Paths:");
+        Map<Edge<Integer>, Integer> edges = new HashMap<>();
+        edges.put(new Edge<>(0, 3, true), 10);
+        edges.put(new Edge<>(1, 0, true), 8);
+        edges.put(new Edge<>(1, 2, true), 9);
+        edges.put(new Edge<>(1, 4, true), 11);
+        edges.put(new Edge<>(2, 0, true), -15);
+        edges.put(new Edge<>(2, 3, true), 1);
+        edges.put(new Edge<>(2, 4, true), 3);
+        edges.put(new Edge<>(3, 7, true), 2);
+        edges.put(new Edge<>(4, 5, true), 8);
+        edges.put(new Edge<>(4, 6, true), 8);
+        edges.put(new Edge<>(5, 6, true), -7);
+        edges.put(new Edge<>(6, 7, true), 5);
+        edges.put(new Edge<>(7, 5, true), 4);
+
+        Map<Integer, Path<Integer>> paths = bellmanFord(edges, 1);
+        for (Path<Integer> path : paths.values()) {
+            System.out.println(path.toString());
+        }
+    }
+
     public static void main(String[] args) {
         testPrim();
         testDijkstra();
+        testBellmanFord();
     }
 }
