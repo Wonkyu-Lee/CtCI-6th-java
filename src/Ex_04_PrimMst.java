@@ -2,12 +2,12 @@ import java.util.*;
 
 public class Ex_04_PrimMst {
 
-    static class Edge<V extends Comparable<V>> {
+    static class Pair<V extends Comparable<V>> {
         public final V first;
         public final V second;
 
-        public Edge(V u, V v, boolean directed) {
-            if (directed) {
+        public Pair(V u, V v, boolean ordered) {
+            if (ordered) {
                 first = u;
                 second = v;
             } else {
@@ -23,7 +23,7 @@ public class Ex_04_PrimMst {
 
         @Override
         public boolean equals(Object o) {
-            Edge other = (Edge)o;
+            Pair other = (Pair)o;
             if (other == null) return false;
             if (this == other) return true;
             return (this.first == other.first && this.second == other.second);
@@ -106,16 +106,16 @@ public class Ex_04_PrimMst {
 
         @Override
         public String toString() {
-            Set<Edge<V>> edges = new HashSet<>();
+            Set<Pair<V>> edges = new HashSet<>();
             for (Node<V> node : nodes.values()) {
                 V u = node.key;
                 for (V v : node.adjs) {
-                    edges.add(new Edge(u, v, directed));
+                    edges.add(new Pair(u, v, directed));
                 }
             }
 
             StringBuilder sb = new StringBuilder();
-            for (Edge<V> edge : edges) {
+            for (Pair<V> edge : edges) {
                 sb.append(edge);
             }
 
@@ -125,9 +125,9 @@ public class Ex_04_PrimMst {
         }
     }
 
-    static <V extends Comparable<V>> Graph<V> primeMst(Map<Edge<V>, Integer> edgeLengths, V start) {
+    static <V extends Comparable<V>> Graph<V> primeMst(Map<Pair<V>, Integer> edgeLengths, V start) {
         Graph<V> graph = new Graph<>(false);
-        for (Edge<V> edge : edgeLengths.keySet()) {
+        for (Pair<V> edge : edgeLengths.keySet()) {
             graph.addEdge(edge.first, edge.second);
         }
 
@@ -148,7 +148,7 @@ public class Ex_04_PrimMst {
             V u = Q.poll();
             for (V v : graph.getAdjacencies(u)) {
                 if (!Q.contains(v)) continue;
-                int edgeLen = edgeLengths.get(new Edge(u, v, false));
+                int edgeLen = edgeLengths.get(new Pair(u, v, false));
                 if (edgeLen < d.get(v)) {
                     d.put(v, edgeLen);
                     Q.remove(v); Q.add(v);
@@ -189,11 +189,11 @@ public class Ex_04_PrimMst {
         }
     }
 
-    static <V extends Comparable<V>> Map<V, Path<V>> dijkstraSp(Map<Edge<V>, Integer> edgeLengths, V start) {
+    static <V extends Comparable<V>> Map<V, Path<V>> dijkstraSp(Map<Pair<V>, Integer> edgeLengths, V start) {
         Map<V, Path<V>> result = new HashMap<>();
 
         Graph<V> g = new Graph<>(true);
-        for (Edge<V> edge : edgeLengths.keySet()) {
+        for (Pair<V> edge : edgeLengths.keySet()) {
             g.addEdge(edge.first, edge.second);
         }
 
@@ -217,7 +217,7 @@ public class Ex_04_PrimMst {
             for (V v : g.getAdjacencies(u)) {
                 if (!Q.contains(v)) continue;
 
-                int dist = d.get(u) + edgeLengths.get(new Edge(u, v, true));
+                int dist = d.get(u) + edgeLengths.get(new Pair(u, v, true));
                 if (dist < d.get(v)) {
                     d.put(v, dist);
                     Q.remove(v); Q.add(v);
@@ -245,11 +245,11 @@ public class Ex_04_PrimMst {
         return result;
     }
 
-    static <V extends Comparable<V>> Map<V, Path<V>> bellmanFord(Map<Edge<V>, Integer> edgeLengths, V start) {
+    static <V extends Comparable<V>> Map<V, Path<V>> bellmanFord(Map<Pair<V>, Integer> edgeLengths, V start) {
         Map<V, Path<V>> result = new HashMap<>();
 
         Graph<V> g = new Graph(true);
-        for (Edge<V> edge : edgeLengths.keySet()) {
+        for (Pair<V> edge : edgeLengths.keySet()) {
             g.addEdge(edge.first, edge.second);
         }
 
@@ -276,7 +276,7 @@ public class Ex_04_PrimMst {
                     if (d0.get(u) == Integer.MAX_VALUE)
                         continue;
 
-                    int dVFromU = d0.get(u) + edgeLengths.get(new Edge<>(u, v, true));
+                    int dVFromU = d0.get(u) + edgeLengths.get(new Pair<>(u, v, true));
                     if (dVFromU < d0.get(v)) {
                         d.put(v, dVFromU);
                         prev.put(v, u);
@@ -292,7 +292,7 @@ public class Ex_04_PrimMst {
         // if minus cycle found, return null
         for (V u : vertices) {
             for (V v : g.getAdjacencies(u)) {
-                int dVFromU = d0.get(u) + edgeLengths.get(new Edge<>(u, v, true));
+                int dVFromU = d0.get(u) + edgeLengths.get(new Pair<>(u, v, true));
                 if (dVFromU < d0.get(v)) {
                     return null;
                 }
@@ -316,19 +316,95 @@ public class Ex_04_PrimMst {
         return result;
     }
 
+    // mid[k] = { v[0], v[1], v[k] }
+    // d[i, j, k]
+    //    = w[i, j], if k = 0
+    //    = min(d[i, j, k -1], d[i, k, k - 1] + d[k, j, k - 1]), if k >= 1
+    static <V extends Comparable<V>> Map<Pair<V>, Path<V>> floydWarshall(Map<Pair<V>, Integer> edgeLengths) {
+        Map<Pair<V>, Path<V>> result = new TreeMap<>((p1, p2) -> {
+            if (p1.first.compareTo(p2.first) == 0) {
+                return p1.second.compareTo(p2.second);
+            } else {
+                return p1.first.compareTo(p2.first);
+            }
+        });
+
+        Graph<V> g = new Graph<>(true);
+        for (Pair<V> edge : edgeLengths.keySet()) {
+            g.addEdge(edge.first, edge.second);
+        }
+
+
+        ArrayList<V> v = new ArrayList<>();
+        v.addAll(g.getVertices());
+        int n = v.size();
+
+        int d[][][] = new int[n][n][n + 1];
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                Pair<V> edge = new Pair<>(v.get(i), v.get(j), true);
+                int distance = edgeLengths.getOrDefault(edge, Integer.MAX_VALUE);
+                d[i][j][0] = distance;
+                if (distance != Integer.MAX_VALUE) {
+                    List<V> vertices = new LinkedList<>();
+                    vertices.add(v.get(i));
+                    vertices.add(v.get(j));
+                    result.put(edge, new Path<>(distance, vertices));
+                }
+            }
+        }
+
+        for (int k = 1; k <= n; ++k) {
+            int kth = k - 1;
+
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j) {
+                    int left = d[i][j][k - 1];
+                    int right = Integer.MAX_VALUE;
+
+                    if (d[i][kth][k - 1] != Integer.MAX_VALUE && d[kth][j][k - 1] != Integer.MAX_VALUE) {
+                        right = d[i][kth][k - 1] + d[kth][j][k - 1];
+                    }
+
+                    if (left <= right) {
+                        d[i][j][k] = left;
+                    } else {
+                        d[i][j][k] = right;
+
+                        Pair<V> edge_ik = new Pair<>(v.get(i), v.get(kth), true);
+                        Pair<V> edge_kj = new Pair<>(v.get(kth), v.get(j), true);
+
+                        Path<V> path_ik = result.get(edge_ik);
+                        Path<V> path_kj = result.get(edge_kj);
+
+                        LinkedList<V> vertices = new LinkedList<>();
+                        vertices.addAll(path_ik.vertices);
+                        vertices.removeLast(); // remove repeated k
+                        vertices.addAll(path_kj.vertices);
+                        Path<V> path_ij = new Path<>(right, vertices);
+                        Pair<V> edge_ij = new Pair<>(v.get(i), v.get(j), true);
+                        result.put(edge_ij, path_ij);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     static void testPrim() {
         System.out.println("Prim MST:");
 
-        Map<Edge<Integer>, Integer> edges = new HashMap<>();
-        edges.put(new Edge<>(0, 1, false), 8);
-        edges.put(new Edge<>(0, 3, false), 10);
-        edges.put(new Edge<>(1, 2, false), 9);
-        edges.put(new Edge<>(1, 4, false), 11);
-        edges.put(new Edge<>(2, 3, false), 5);
-        edges.put(new Edge<>(2, 4, false), 13);
-        edges.put(new Edge<>(2, 6, false), 12);
-        edges.put(new Edge<>(4, 5, false), 8);
-        edges.put(new Edge<>(5, 6, false), 7);
+        Map<Pair<Integer>, Integer> edges = new HashMap<>();
+        edges.put(new Pair<>(0, 1, false), 8);
+        edges.put(new Pair<>(0, 3, false), 10);
+        edges.put(new Pair<>(1, 2, false), 9);
+        edges.put(new Pair<>(1, 4, false), 11);
+        edges.put(new Pair<>(2, 3, false), 5);
+        edges.put(new Pair<>(2, 4, false), 13);
+        edges.put(new Pair<>(2, 6, false), 12);
+        edges.put(new Pair<>(4, 5, false), 8);
+        edges.put(new Pair<>(5, 6, false), 7);
 
         Graph<Integer> mst = primeMst(edges, 1);
         System.out.println(mst);
@@ -336,20 +412,20 @@ public class Ex_04_PrimMst {
 
     static void testDijkstra() {
         System.out.println("Dijkstra Shortest Paths:");
-        Map<Edge<Integer>, Integer> edges = new HashMap<>();
-        edges.put(new Edge<>(0, 3, true), 10);
-        edges.put(new Edge<>(1, 0, true), 8);
-        edges.put(new Edge<>(1, 2, true), 9);
-        edges.put(new Edge<>(1, 4, true), 11);
-        edges.put(new Edge<>(2, 0, true), 6);
-        edges.put(new Edge<>(2, 3, true), 1);
-        edges.put(new Edge<>(2, 4, true), 3);
-        edges.put(new Edge<>(3, 7, true), 2);
-        edges.put(new Edge<>(4, 5, true), 8);
-        edges.put(new Edge<>(4, 6, true), 8);
-        edges.put(new Edge<>(5, 6, true), 7);
-        edges.put(new Edge<>(6, 7, true), 5);
-        edges.put(new Edge<>(7, 5, true), 4);
+        Map<Pair<Integer>, Integer> edges = new HashMap<>();
+        edges.put(new Pair<>(0, 3, true), 10);
+        edges.put(new Pair<>(1, 0, true), 8);
+        edges.put(new Pair<>(1, 2, true), 9);
+        edges.put(new Pair<>(1, 4, true), 11);
+        edges.put(new Pair<>(2, 0, true), 6);
+        edges.put(new Pair<>(2, 3, true), 1);
+        edges.put(new Pair<>(2, 4, true), 3);
+        edges.put(new Pair<>(3, 7, true), 2);
+        edges.put(new Pair<>(4, 5, true), 8);
+        edges.put(new Pair<>(4, 6, true), 8);
+        edges.put(new Pair<>(5, 6, true), 7);
+        edges.put(new Pair<>(6, 7, true), 5);
+        edges.put(new Pair<>(7, 5, true), 4);
 
         Map<Integer, Path<Integer>> paths = dijkstraSp(edges, 1);
         for (Path<Integer> path : paths.values()) {
@@ -359,20 +435,20 @@ public class Ex_04_PrimMst {
 
     static void testBellmanFord() {
         System.out.println("Bellman-Ford Shortest Paths:");
-        Map<Edge<Integer>, Integer> edges = new HashMap<>();
-        edges.put(new Edge<>(0, 3, true), 10);
-        edges.put(new Edge<>(1, 0, true), 8);
-        edges.put(new Edge<>(1, 2, true), 9);
-        edges.put(new Edge<>(1, 4, true), 11);
-        edges.put(new Edge<>(2, 0, true), -15);
-        edges.put(new Edge<>(2, 3, true), 1);
-        edges.put(new Edge<>(2, 4, true), 3);
-        edges.put(new Edge<>(3, 7, true), 2);
-        edges.put(new Edge<>(4, 5, true), 8);
-        edges.put(new Edge<>(4, 6, true), 8);
-        edges.put(new Edge<>(5, 6, true), -7);
-        edges.put(new Edge<>(6, 7, true), 5);
-        edges.put(new Edge<>(7, 5, true), 4);
+        Map<Pair<Integer>, Integer> edges = new HashMap<>();
+        edges.put(new Pair<>(0, 3, true), 10);
+        edges.put(new Pair<>(1, 0, true), 8);
+        edges.put(new Pair<>(1, 2, true), 9);
+        edges.put(new Pair<>(1, 4, true), 11);
+        edges.put(new Pair<>(2, 0, true), -15);
+        edges.put(new Pair<>(2, 3, true), 1);
+        edges.put(new Pair<>(2, 4, true), 3);
+        edges.put(new Pair<>(3, 7, true), 2);
+        edges.put(new Pair<>(4, 5, true), 8);
+        edges.put(new Pair<>(4, 6, true), 8);
+        edges.put(new Pair<>(5, 6, true), -7);
+        edges.put(new Pair<>(6, 7, true), 5);
+        edges.put(new Pair<>(7, 5, true), 4);
 
         Map<Integer, Path<Integer>> paths = bellmanFord(edges, 1);
         for (Path<Integer> path : paths.values()) {
@@ -380,9 +456,33 @@ public class Ex_04_PrimMst {
         }
     }
 
+    static void testFloydWarshall() {
+        System.out.println("Floyd-Warshall Shortest Paths:");
+        Map<Pair<Integer>, Integer> edges = new HashMap<>();
+        edges.put(new Pair<>(0, 3, true), 10);
+        edges.put(new Pair<>(1, 0, true), 8);
+        edges.put(new Pair<>(1, 2, true), 9);
+        edges.put(new Pair<>(1, 4, true), 11);
+        edges.put(new Pair<>(2, 0, true), -15);
+        edges.put(new Pair<>(2, 3, true), 1);
+        edges.put(new Pair<>(2, 4, true), 3);
+        edges.put(new Pair<>(3, 7, true), 2);
+        edges.put(new Pair<>(4, 5, true), 8);
+        edges.put(new Pair<>(4, 6, true), 8);
+        edges.put(new Pair<>(5, 6, true), -7);
+        edges.put(new Pair<>(6, 7, true), 5);
+        edges.put(new Pair<>(7, 5, true), 4);
+
+        Map<Pair<Integer>, Path<Integer>> allPaths = floydWarshall(edges);
+        for (Pair<Integer> pair : allPaths.keySet()) {
+            System.out.println(pair + ": " + allPaths.get(pair));
+        }
+    }
+
     public static void main(String[] args) {
         testPrim();
         testDijkstra();
         testBellmanFord();
+        testFloydWarshall();
     }
 }
