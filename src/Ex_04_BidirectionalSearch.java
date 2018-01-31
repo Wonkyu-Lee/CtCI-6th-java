@@ -25,18 +25,18 @@ public class Ex_04_BidirectionalSearch {
             Vertex<T> u = mVertices.get(uId);
             Vertex<T> v = mVertices.get(vId);
 
-            Dfs uDfs = new Dfs(u);
-            Dfs vDfs = new Dfs(v);
+            Bfs uBfs = new Bfs(u);
+            Bfs vBfs = new Bfs(v);
 
-            while (!uDfs.isFinished() && !vDfs.isFinished()) {
+            while (!uBfs.isFinished() && !vBfs.isFinished()) {
                 Vertex<T> contact;
-                contact = uDfs.searchLevel(vDfs);
+                contact = uBfs.searchLevel(vBfs);
                 if (contact != null) {
-                    return uDfs.makePath(contact, vDfs);
+                    return uBfs.makePath(contact, vBfs);
                 }
-                contact = vDfs.searchLevel(uDfs);
+                contact = vBfs.searchLevel(uBfs);
                 if (contact != null) {
-                    return vDfs.makePath(contact, uDfs);
+                    return vBfs.makePath(contact, uBfs);
                 }
             }
 
@@ -49,13 +49,13 @@ public class Ex_04_BidirectionalSearch {
             Vertex(T id) { this.id = id; }
         }
 
-        private class Dfs {
+        private class Bfs {
             final Vertex<T> mStart;
             final Queue<Vertex<T>> mQueue = new LinkedList<>();
             final Set<T> mVisited = new HashSet<>();
             final Map<T, T> mPrev = new HashMap<>();
 
-            Dfs(Vertex<T> start) {
+            Bfs(Vertex<T> start) {
                 mStart = start;
                 mVisited.add(start.id);
                 mQueue.add(start);
@@ -73,7 +73,7 @@ public class Ex_04_BidirectionalSearch {
                 mVisited.add(v.id);
             }
 
-            Vertex<T> searchLevel(Dfs other) {
+            Vertex<T> searchLevel(Bfs other) {
                 int count = mQueue.size();
                 for (int i = 0; i < count; ++i) {
                     Vertex<T> u = mQueue.poll();
@@ -90,7 +90,7 @@ public class Ex_04_BidirectionalSearch {
                 return null;
             }
 
-            List<T> makePath(Vertex<T> contact, Dfs other) {
+            List<T> makePath(Vertex<T> contact, Bfs other) {
                 LinkedList<T> path = new LinkedList<>();
 
                 T current = contact.id;

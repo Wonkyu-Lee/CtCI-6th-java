@@ -50,6 +50,9 @@ public class Ex_00_PairsOfDiffK {
 
             if (numbers.contains(lt)) {
                 pairs.add(new OrderedPair(each, lt));
+            }
+
+            if (numbers.contains(gt)) {
                 pairs.add(new OrderedPair(each, gt));
             }
         }
