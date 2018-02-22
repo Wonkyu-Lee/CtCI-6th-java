@@ -49,6 +49,10 @@ public class Notes {
         }
     }
 
+    static void testShift() {
+
+    }
+
     public static void main(String args[]) {
         testLinkedHashSet();
     }
